@@ -86,7 +86,7 @@ export async function shareScore(score) {
                                 action: {
                                     type: 'uri',
                                     label: 'プレイする',
-                                    uri: 'https://liff.line.me/YOUR_LIFF_ID',
+                                    uri: 'https://miniapp.line.me/2009367746-DzXgq6pY',
                                 },
                                 style: 'primary',
                                 color: '#667eea',

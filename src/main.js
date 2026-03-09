@@ -16,7 +16,7 @@ import { Tutorial } from './ui/Tutorial.js';
 import { initLiff, isInLineApp, shareScore } from './liff.js';
 
 // ===== Configuration =====
-const LIFF_ID = 'YOUR_LIFF_ID';
+const LIFF_ID = '2009367746-DzXgq6pY';
 
 // ===== Game State =====
 let board;
