@@ -55,6 +55,23 @@ async function main() {
     document.addEventListener('pointerdown', initAudioOnce, { once: true });
     document.addEventListener('touchstart', initAudioOnce, { once: true });
 
+    // Header share button
+    const headerShareBtn = document.getElementById('header-share-btn');
+    headerShareBtn.addEventListener('click', () => {
+        const currentScore = scoreMgr ? scoreMgr.score : 0;
+        if (isInLineApp()) {
+            shareScore(currentScore);
+        } else if (navigator.share) {
+            navigator.share({
+                title: 'Block Crush! 木パズル',
+                text: `Block Crush! スコア: ${currentScore.toLocaleString()} 🪵`,
+                url: 'https://miniapp.line.me/2009367746-DzXgq6pY',
+            }).catch(() => { });
+        } else {
+            alert(`スコア: ${currentScore.toLocaleString()}\nLINE内でプレイすると友だちに共有できます！`);
+        }
+    });
+
     // Show tutorial on first run, then check for saved game
     tutorial.show(() => {
         if (SaveManager.hasSave()) {
