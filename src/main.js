@@ -13,6 +13,7 @@ import { DragController } from './input/DragController.js';
 import { UIOverlay } from './ui/UIOverlay.js';
 import { SoundManager } from './audio/SoundManager.js';
 import { Tutorial } from './ui/Tutorial.js';
+import { SaveManager } from './game/SaveManager.js';
 import { initLiff, isInLineApp, shareScore } from './liff.js';
 
 // ===== Configuration =====
@@ -54,13 +55,21 @@ async function main() {
     document.addEventListener('pointerdown', initAudioOnce, { once: true });
     document.addEventListener('touchstart', initAudioOnce, { once: true });
 
-    // Show tutorial on first run, then start game
+    // Show tutorial on first run, then check for saved game
     tutorial.show(() => {
-        startNewGame();
+        if (SaveManager.hasSave()) {
+            SaveManager.showResumeDialog(
+                () => resumeGame(),   // Continue saved game
+                () => startNewGame()  // Start fresh
+            );
+        } else {
+            startNewGame();
+        }
     });
 }
 
 function startNewGame() {
+    SaveManager.clear();
     board = new Board();
     pieceGen = new PieceGenerator();
     scoreMgr = new ScoreManager();
@@ -71,6 +80,34 @@ function startNewGame() {
 
     const pieces = pieceGen.generateSet();
     renderTray(pieces);
+
+    if (dragCtrl) dragCtrl.destroy();
+    dragCtrl = new DragController(renderer, board, handlePlace, handleRotate);
+
+    if (sound._initialized && !sound._bgmPlaying) {
+        sound.startBGM();
+    }
+
+    // Auto-save initial state
+    SaveManager.save(board, pieceGen, scoreMgr);
+}
+
+function resumeGame() {
+    board = new Board();
+    pieceGen = new PieceGenerator();
+    scoreMgr = new ScoreManager();
+
+    const loaded = SaveManager.load(board, pieceGen, scoreMgr);
+    if (!loaded) {
+        startNewGame();
+        return;
+    }
+
+    ui.reset();
+    ui.updateScore(scoreMgr.score);
+    ui.updateBest(scoreMgr.best);
+    renderer.syncBoard(board);
+    renderTray(pieceGen.currentSet);
 
     if (dragCtrl) dragCtrl.destroy();
     dragCtrl = new DragController(renderer, board, handlePlace, handleRotate);
@@ -190,12 +227,15 @@ function handlePlace(pieceIndex, piece, row, col) {
         } else {
             checkAfterDelay();
         }
+        // Auto-save after each move
+        SaveManager.save(board, pieceGen, scoreMgr);
     }, 100);
 }
 
 function gameOver() {
     sound.playGameOver();
     sound.stopBGM();
+    SaveManager.clear(); // Clear save on game over
     const shareHandler = isInLineApp() ? (score) => shareScore(score) : null;
     ui.showGameOver(scoreMgr.score, startNewGame, shareHandler);
 }
